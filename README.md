@@ -1,4 +1,6 @@
-# Mock Serveer
+# Lazy Mock Server
+
+## Usage
 * set mock response
 
 ```bash
@@ -28,3 +30,8 @@ $ curl -d '{"key1":"value1", "key2":"value2"}' -H "Content-Type: application/jso
 
 
 ```
+
+## TODO
+* Setup Expectations by REST API
+* Add a web UI for setup expectation and checking mock history
+* Add sqlite DB support for authentication and history
