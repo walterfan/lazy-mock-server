@@ -2,10 +2,8 @@
 
 ## Usage
 * set mock response
-
-```bash
-vi app/mock_response.yaml
-```
+* 
+  - vi [mock_response.yaml](app/mock_response.yaml)
 
 * startup
 
