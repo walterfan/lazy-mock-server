@@ -1,22 +1,18 @@
 routes:
-  - path: "/api/get_example"
+  - path: "/v1/metadata/sn"
     method: "GET"
     status_code: 200
-    response:
-      message: "This is a mock GET response."
+    content_type: "text/plain"
+    response: "8CPKW77"
 
-  - path: "/api/post_example"
-    method: "POST"
-    status_code: 201
-    response:
-      message: "This is a mock POST response."
-      data_received: "{data}"
-
-  - path: "/api/getResourcesVersionByCustomerId"
+  - path: "/v1/metadata/instanceid"
     method: "GET"
     status_code: 200
-    response:
-      customer_id: "0085c2b7-41b8-422b-87c9-467d4c97536b"
-      resource_version:
-        print: "1.0.0"
-        ukg: "1.0.2"
+    content_type: "text/plain"
+    response: "mi-00f3bc8e715f8bb77"
+
+  - path: "/v1/metadata/process/"
+    method: "GET"
+    status_code: 200
+    content_type: "text/plain"
+    response: "3484295_/home/walter/instance-agent/instance-agent -config=/home/walter/instance-agent/config.json"

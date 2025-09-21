@@ -1,0 +1,121 @@
+routes:
+  # Basic text/plain responses (compatible with existing config)
+  - path: "/v1/metadata/sn"
+    method: "GET"
+    status_code: 200
+    content_type: "text/plain"
+    response: "8CPKW77"
+
+  - path: "/v1/metadata/instanceid"
+    method: "GET"
+    status_code: 200
+    content_type: "text/plain"
+    response: "mi-00f3bc8e715f8bb77"
+
+  - path: "/v1/metadata/process/"
+    method: "GET"
+    status_code: 200
+    content_type: "text/plain"
+    response: "3484295_/home/walter/instance-agent/instance-agent -config=/home/walter/instance-agent/config.json"
+
+  # Advanced examples with custom status codes and headers
+  - path: "/api/users/*"
+    method: "GET"
+    status_code: 200
+    content_type: "application/json"
+    headers:
+      X-Custom-Header: "mock-server"
+      Cache-Control: "no-cache"
+    response:
+      users:
+        - id: 1
+          name: "John Doe"
+          email: "john@example.com"
+        - id: 2
+          name: "Jane Smith"
+          email: "jane@example.com"
+
+  - path: "/api/users"
+    method: "POST"
+    status_code: 201
+    content_type: "application/json"
+    response:
+      id: 123
+      message: "User created successfully"
+      timestamp: "2023-12-01T10:00:00Z"
+
+  # Error responses
+  - path: "/api/error/400"
+    method: "GET"
+    status_code: 400
+    content_type: "application/json"
+    response:
+      error: "Bad Request"
+      code: 400
+      message: "Invalid request parameters"
+
+  - path: "/api/error/500"
+    method: "GET"
+    status_code: 500
+    content_type: "application/json"
+    response:
+      error: "Internal Server Error"
+      code: 500
+      message: "Something went wrong on the server"
+
+  # Dynamic responses with placeholders
+  - path: "/api/echo"
+    method: "GET"
+    status_code: 200
+    content_type: "application/json"
+    response:
+      method: "{method}"
+      path: "{path}"
+      query: "{query}"
+      message: "Echo response for {path}"
+
+  # Parameter-based matching
+  - path: "/api/search"
+    method: "GET"
+    status_code: 200
+    content_type: "application/json"
+    parameters:
+      type: "user"
+    response:
+      results:
+        - type: "user"
+          data: "User search results"
+
+  - path: "/api/search"
+    method: "GET"
+    status_code: 200
+    content_type: "application/json"
+    parameters:
+      type: "product"
+    response:
+      results:
+        - type: "product"
+          data: "Product search results"
+
+  # Custom content types
+  - path: "/api/xml"
+    method: "GET"
+    status_code: 200
+    content_type: "application/xml"
+    response: |
+      <?xml version="1.0" encoding="UTF-8"?>
+      <response>
+        <status>success</status>
+        <data>XML response example</data>
+      </response>
+
+  - path: "/api/html"
+    method: "GET"
+    status_code: 200
+    content_type: "text/html"
+    response: |
+      <!DOCTYPE html>
+      <html>
+      <head><title>Mock Response</title></head>
+      <body><h1>Hello from Mock Server!</h1></body>
+      </html>

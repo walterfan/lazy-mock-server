@@ -1,0 +1,25 @@
+run:
+  timeout: 5m
+
+linters:
+  enable:
+    - gofmt
+    - govet
+    - errcheck
+    - staticcheck
+    - unused
+    - gosimple
+    - ineffassign
+    - typecheck
+
+issues:
+  exclude-rules:
+    # Ignore errcheck and staticcheck issues in test files
+    - path: _test\.go
+      linters:
+        - errcheck
+        - staticcheck
+    # Ignore nil pointer checks for constructors that can't return nil
+    - text: "possible nil pointer dereference"
+      linters:
+        - staticcheck

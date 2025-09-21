@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 import argparse
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, Response
 import yaml
 import os
 
@@ -25,6 +25,9 @@ def mock_endpoint(path):
         if route['path'].strip('/') in path and route['method'].upper() == request.method:
             # Generate the response
             response_body = route['response']
+            status_code = route.get('status_code', 200)
+            content_type = route.get('content_type', 'application/json')
+            
             if isinstance(response_body, dict):
                 # Inject request data if specified
                 if '{data}' in str(response_body):
@@ -32,7 +35,15 @@ def mock_endpoint(path):
                         k: (v.replace("{data}", str(request.json)) if isinstance(v, str) else v)
                         for k, v in response_body.items()
                     }
-            return jsonify(response_body), route.get('status_code', 200)
+            
+            # Return response based on content type
+            if content_type == 'text/plain':
+                return Response(str(response_body), status=status_code, mimetype='text/plain')
+            elif content_type == 'application/json':
+                return jsonify(response_body), status_code
+            else:
+                # For other content types, return as string with specified content type
+                return Response(str(response_body), status=status_code, mimetype=content_type)
 
     # Default response for unmatched routes
     return jsonify({"error": "Route not found"}), 404

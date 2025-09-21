@@ -1,11 +1,11 @@
 #!/bin/bash
 #source ./venv/bin/activate
 
-web_port=9000
+web_port=1989
 web_debug=0
 
 if [ "$#" -ne 2 ]; then
-  echo "Usage: $0 <port=9000> <is_debug=0>"
+  echo "Usage: $0 <port=1989> <is_debug=0>"
 else
   web_port="$1"
   web_debug="$2"

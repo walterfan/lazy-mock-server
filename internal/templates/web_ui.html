@@ -1,0 +1,496 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mock Server Management</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f5f5f5;
+            color: #333;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            border-radius: 10px;
+            margin-bottom: 30px;
+            text-align: center;
+        }
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+        .header p {
+            font-size: 1.1em;
+            opacity: 0.9;
+        }
+        .section {
+            background: white;
+            padding: 25px;
+            border-radius: 10px;
+            margin-bottom: 25px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .section h2 {
+            color: #667eea;
+            margin-bottom: 20px;
+            font-size: 1.5em;
+            border-bottom: 2px solid #eee;
+            padding-bottom: 10px;
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        .form-row {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+        .form-row > div {
+            flex: 1;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 600;
+            color: #555;
+        }
+        input, select, textarea {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 5px;
+            font-size: 14px;
+            transition: border-color 0.3s;
+        }
+        input:focus, select:focus, textarea:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        textarea {
+            resize: vertical;
+            min-height: 100px;
+        }
+        .btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 12px 25px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+        .btn-danger {
+            background: linear-gradient(135deg, #ff6b6b 0%, #ee5a5a 100%);
+        }
+        .btn-success {
+            background: linear-gradient(135deg, #51cf66 0%, #40c057 100%);
+        }
+        .routes-list {
+            margin-top: 20px;
+        }
+        .route-item {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 15px;
+            transition: box-shadow 0.2s;
+        }
+        .route-item:hover {
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+        .route-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        .route-info {
+            flex: 1;
+        }
+        .route-path {
+            font-size: 1.2em;
+            font-weight: bold;
+            color: #667eea;
+        }
+        .route-method {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.8em;
+            font-weight: bold;
+            margin-right: 10px;
+        }
+        .method-GET { background: #d4edda; color: #155724; }
+        .method-POST { background: #fff3cd; color: #856404; }
+        .method-PUT { background: #cce5ff; color: #004085; }
+        .method-DELETE { background: #f8d7da; color: #721c24; }
+        .status-code {
+            font-weight: bold;
+            padding: 4px 8px;
+            border-radius: 4px;
+            margin-left: 10px;
+        }
+        .status-200 { background: #d4edda; color: #155724; }
+        .status-404 { background: #f8d7da; color: #721c24; }
+        .status-500 { background: #f8d7da; color: #721c24; }
+        .route-actions {
+            display: flex;
+            gap: 10px;
+        }
+        .response-preview {
+            background: #f1f3f4;
+            padding: 15px;
+            border-radius: 5px;
+            margin-top: 10px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+            max-height: 150px;
+            overflow-y: auto;
+        }
+        .alert {
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            font-weight: 500;
+        }
+        .alert-success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .alert-error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .stats {
+            display: flex;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+        .stat-card {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            text-align: center;
+            flex: 1;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        .stat-number {
+            font-size: 2em;
+            font-weight: bold;
+            color: #667eea;
+        }
+        .stat-label {
+            color: #666;
+            margin-top: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🚀 Mock Server Management</h1>
+            <p>Manage your mock API routes and responses in real-time</p>
+        </div>
+
+        <div class="stats">
+            <div class="stat-card">
+                <div class="stat-number" id="routeCount">0</div>
+                <div class="stat-label">Active Routes</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="serverStatus">🟢</div>
+                <div class="stat-label">Server Status</div>
+            </div>
+        </div>
+
+        <div id="alertContainer"></div>
+
+        <div class="section">
+            <h2>Add New Route</h2>
+            <form id="addRouteForm">
+                <div class="form-row">
+                    <div>
+                        <label>Path:</label>
+                        <input type="text" id="newPath" placeholder="/api/example" required>
+                    </div>
+                    <div>
+                        <label>Method:</label>
+                        <select id="newMethod" required>
+                            <option value="GET">GET</option>
+                            <option value="POST">POST</option>
+                            <option value="PUT">PUT</option>
+                            <option value="DELETE">DELETE</option>
+                            <option value="PATCH">PATCH</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div>
+                        <label>Status Code:</label>
+                        <input type="number" id="newStatusCode" value="200" min="100" max="599" required>
+                    </div>
+                    <div>
+                        <label>Content Type:</label>
+                        <select id="newContentType">
+                            <option value="application/json">application/json</option>
+                            <option value="text/plain">text/plain</option>
+                            <option value="text/html">text/html</option>
+                            <option value="application/xml">application/xml</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Response Body:</label>
+                    <textarea id="newResponse" placeholder='{"message": "Hello World"}' required></textarea>
+                </div>
+                <button type="submit" class="btn">Add Route</button>
+            </form>
+        </div>
+
+        <div class="section">
+            <h2>Current Routes</h2>
+            <button class="btn btn-success" onclick="loadRoutes()">Refresh Routes</button>
+            <button class="btn" onclick="saveConfig()">Save Configuration</button>
+            <div class="routes-list" id="routesList"></div>
+        </div>
+    </div>
+
+    <script>
+        let routes = [];
+
+        function showAlert(message, type = 'success') {
+            const alertContainer = document.getElementById('alertContainer');
+            const alert = document.createElement('div');
+            alert.className = 'alert alert-' + type;
+            alert.textContent = message;
+            alertContainer.appendChild(alert);
+            
+            setTimeout(() => {
+                alert.remove();
+            }, 5000);
+        }
+
+        function updateStats() {
+            document.getElementById('routeCount').textContent = routes.length;
+        }
+
+        async function loadRoutes() {
+            try {
+                const response = await fetch('/_mock/routes');
+                const data = await response.json();
+                routes = data.routes;
+                renderRoutes();
+                updateStats();
+            } catch (error) {
+                showAlert('Failed to load routes: ' + error.message, 'error');
+            }
+        }
+
+        function renderRoutes() {
+            const routesList = document.getElementById('routesList');
+            routesList.innerHTML = '';
+
+            routes.forEach((route, index) => {
+                const routeDiv = document.createElement('div');
+                routeDiv.className = 'route-item';
+                
+                let responsePreview = route.response;
+                if (typeof responsePreview === 'object') {
+                    responsePreview = JSON.stringify(responsePreview, null, 2);
+                }
+                if (responsePreview.length > 200) {
+                    responsePreview = responsePreview.substring(0, 200) + '...';
+                }
+
+                routeDiv.innerHTML = `
+                    <div class="route-header">
+                        <div class="route-info">
+                            <div class="route-path">${route.path}</div>
+                            <span class="route-method method-${route.method}">${route.method}</span>
+                            <span class="status-code status-${route.status_code}">${route.status_code}</span>
+                            <span style="color: #666; font-size: 0.9em;">${route.content_type}</span>
+                        </div>
+                        <div class="route-actions">
+                            <button class="btn" onclick="editRoute(${index})">Edit</button>
+                            <button class="btn btn-danger" onclick="deleteRoute('${route.path}')">Delete</button>
+                        </div>
+                    </div>
+                    <div class="response-preview">${responsePreview}</div>
+                `;
+                
+                routesList.appendChild(routeDiv);
+            });
+        }
+
+        async function addRoute(event) {
+            event.preventDefault();
+            
+            const newRoute = {
+                path: document.getElementById('newPath').value,
+                method: document.getElementById('newMethod').value,
+                status_code: parseInt(document.getElementById('newStatusCode').value),
+                content_type: document.getElementById('newContentType').value,
+                response: document.getElementById('newResponse').value
+            };
+
+            // Try to parse response as JSON if content type is JSON
+            if (newRoute.content_type === 'application/json') {
+                try {
+                    newRoute.response = JSON.parse(newRoute.response);
+                } catch (e) {
+                    showAlert('Invalid JSON in response body', 'error');
+                    return;
+                }
+            }
+
+            try {
+                const response = await fetch('/_mock/routes', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(newRoute)
+                });
+
+                if (response.ok) {
+                    showAlert('Route added successfully!');
+                    document.getElementById('addRouteForm').reset();
+                    loadRoutes();
+                } else {
+                    const error = await response.json();
+                    showAlert('Failed to add route: ' + error.error, 'error');
+                }
+            } catch (error) {
+                showAlert('Failed to add route: ' + error.message, 'error');
+            }
+        }
+
+        async function deleteRoute(path) {
+            if (!confirm('Are you sure you want to delete this route?')) return;
+
+            try {
+                const response = await fetch(`/_mock/routes${path}`, {
+                    method: 'DELETE'
+                });
+
+                if (response.ok) {
+                    showAlert('Route deleted successfully!');
+                    loadRoutes();
+                } else {
+                    const error = await response.json();
+                    showAlert('Failed to delete route: ' + error.error, 'error');
+                }
+            } catch (error) {
+                showAlert('Failed to delete route: ' + error.message, 'error');
+            }
+        }
+
+        function editRoute(index) {
+            const route = routes[index];
+            document.getElementById('newPath').value = route.path;
+            document.getElementById('newMethod').value = route.method;
+            document.getElementById('newStatusCode').value = route.status_code;
+            document.getElementById('newContentType').value = route.content_type;
+            
+            let responseValue = route.response;
+            if (typeof responseValue === 'object') {
+                responseValue = JSON.stringify(responseValue, null, 2);
+            }
+            document.getElementById('newResponse').value = responseValue;
+            
+            // Change form to update mode
+            const form = document.getElementById('addRouteForm');
+            const submitBtn = form.querySelector('button[type="submit"]');
+            submitBtn.textContent = 'Update Route';
+            submitBtn.onclick = (e) => updateRoute(e, route.path);
+        }
+
+        async function updateRoute(event, originalPath) {
+            event.preventDefault();
+            
+            const updatedRoute = {
+                path: document.getElementById('newPath').value,
+                method: document.getElementById('newMethod').value,
+                status_code: parseInt(document.getElementById('newStatusCode').value),
+                content_type: document.getElementById('newContentType').value,
+                response: document.getElementById('newResponse').value
+            };
+
+            // Try to parse response as JSON if content type is JSON
+            if (updatedRoute.content_type === 'application/json') {
+                try {
+                    updatedRoute.response = JSON.parse(updatedRoute.response);
+                } catch (e) {
+                    showAlert('Invalid JSON in response body', 'error');
+                    return;
+                }
+            }
+
+            try {
+                const response = await fetch(`/_mock/routes${originalPath}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(updatedRoute)
+                });
+
+                if (response.ok) {
+                    showAlert('Route updated successfully!');
+                    document.getElementById('addRouteForm').reset();
+                    const submitBtn = document.querySelector('#addRouteForm button[type="submit"]');
+                    submitBtn.textContent = 'Add Route';
+                    submitBtn.onclick = addRoute;
+                    loadRoutes();
+                } else {
+                    const error = await response.json();
+                    showAlert('Failed to update route: ' + error.error, 'error');
+                }
+            } catch (error) {
+                showAlert('Failed to update route: ' + error.message, 'error');
+            }
+        }
+
+        async function saveConfig() {
+            try {
+                const response = await fetch('/_mock/config', {
+                    method: 'POST'
+                });
+
+                if (response.ok) {
+                    showAlert('Configuration saved to file successfully!');
+                } else {
+                    const error = await response.json();
+                    showAlert('Failed to save configuration: ' + error.error, 'error');
+                }
+            } catch (error) {
+                showAlert('Failed to save configuration: ' + error.message, 'error');
+            }
+        }
+
+        // Event listeners
+        document.getElementById('addRouteForm').addEventListener('submit', addRoute);
+
+        // Load routes on page load
+        loadRoutes();
+    </script>
+</body>
+</html>
