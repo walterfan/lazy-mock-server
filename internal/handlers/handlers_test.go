@@ -76,6 +76,7 @@ func TestNewMockHandler(t *testing.T) {
 	handler := NewMockHandler(configManager, log)
 	if handler == nil {
 		t.Error("Expected handler to be created")
+		return
 	}
 	if handler.configManager != configManager {
 		t.Error("Expected config manager to be set")

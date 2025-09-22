@@ -14,6 +14,7 @@ func TestNew(t *testing.T) {
 	logger := New(LogLevelInfo)
 	if logger == nil {
 		t.Error("Expected logger to be created")
+		return
 	}
 	if logger.level != LogLevelInfo {
 		t.Errorf("Expected log level %d, got %d", LogLevelInfo, logger.level)
@@ -26,6 +27,7 @@ func TestNewWithWriters(t *testing.T) {
 
 	if logger == nil {
 		t.Error("Expected logger to be created")
+		return
 	}
 	if logger.level != LogLevelDebug {
 		t.Errorf("Expected log level %d, got %d", LogLevelDebug, logger.level)
@@ -241,7 +243,9 @@ func TestMiddleware(t *testing.T) {
 	// Create a test handler
 	testHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
-		w.Write([]byte("test response"))
+		if _, err := w.Write([]byte("test response")); err != nil {
+			t.Errorf("Failed to write test response: %v", err)
+		}
 	})
 
 	// Wrap with logging middleware

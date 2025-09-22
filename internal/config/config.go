@@ -18,6 +18,36 @@ type Route struct {
 	Parameters  map[string]string `yaml:"parameters,omitempty" json:"parameters,omitempty"`
 }
 
+// GetJSONSafeResponse returns a JSON-safe version of the response
+func (r *Route) GetJSONSafeResponse() interface{} {
+	return convertYAMLToJSON(r.Response)
+}
+
+// convertYAMLToJSON converts YAML interface{} types to JSON-compatible types
+func convertYAMLToJSON(data interface{}) interface{} {
+	switch v := data.(type) {
+	case map[interface{}]interface{}:
+		// Convert map[interface{}]interface{} to map[string]interface{}
+		result := make(map[string]interface{})
+		for key, value := range v {
+			if strKey, ok := key.(string); ok {
+				result[strKey] = convertYAMLToJSON(value)
+			}
+		}
+		return result
+	case []interface{}:
+		// Convert slice elements recursively
+		result := make([]interface{}, len(v))
+		for i, item := range v {
+			result[i] = convertYAMLToJSON(item)
+		}
+		return result
+	default:
+		// Return as-is for basic types (string, int, bool, etc.)
+		return v
+	}
+}
+
 // Config represents the entire mock configuration
 type Config struct {
 	Routes []Route `yaml:"routes" json:"routes"`

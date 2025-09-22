@@ -348,7 +348,9 @@ func TestSaveConfig(t *testing.T) {
 		Response:    "saved",
 	}
 
-	server.AddRoute(newRoute)
+	if err := server.AddRoute(newRoute); err != nil {
+		t.Errorf("Failed to add route: %v", err)
+	}
 
 	// Save configuration
 	err = server.SaveConfig()

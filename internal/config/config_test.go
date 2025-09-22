@@ -10,6 +10,7 @@ func TestNewManager(t *testing.T) {
 	manager := NewManager("test.yaml")
 	if manager == nil {
 		t.Error("Expected manager to be created")
+		return
 	}
 	if manager.configPath != "test.yaml" {
 		t.Errorf("Expected config path 'test.yaml', got '%s'", manager.configPath)

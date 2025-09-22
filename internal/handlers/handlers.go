@@ -92,7 +92,9 @@ func (h *MockHandler) handleMockEndpoint(w http.ResponseWriter, r *http.Request)
 				}
 			}
 		} else {
-			if err := json.NewEncoder(w).Encode(responseBody); err != nil {
+			// Convert to JSON-safe format before encoding
+			jsonSafeResponse := h.convertToJSONSafe(responseBody)
+			if err := json.NewEncoder(w).Encode(jsonSafeResponse); err != nil {
 				h.logger.LogError(err, "encoding response body")
 			}
 		}
@@ -104,8 +106,44 @@ func (h *MockHandler) handleMockEndpoint(w http.ResponseWriter, r *http.Request)
 	}
 }
 
+// convertToJSONSafe converts YAML interface{} types to JSON-compatible types
+func (h *MockHandler) convertToJSONSafe(data interface{}) interface{} {
+	switch v := data.(type) {
+	case map[interface{}]interface{}:
+		// Convert map[interface{}]interface{} to map[string]interface{}
+		result := make(map[string]interface{})
+		for key, value := range v {
+			if strKey, ok := key.(string); ok {
+				result[strKey] = h.convertToJSONSafe(value)
+			}
+		}
+		return result
+	case []interface{}:
+		// Convert slice elements recursively
+		result := make([]interface{}, len(v))
+		for i, item := range v {
+			result[i] = h.convertToJSONSafe(item)
+		}
+		return result
+	default:
+		// Return as-is for basic types (string, int, bool, etc.)
+		return v
+	}
+}
+
 // handleManagementAPI handles the management API endpoints
 func (h *MockHandler) handleManagementAPI(w http.ResponseWriter, r *http.Request) {
+	// Set CORS headers for web UI
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+	w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
+	w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
+
+	// Handle preflight OPTIONS requests
+	if r.Method == "OPTIONS" {
+		w.WriteHeader(http.StatusOK)
+		return
+	}
+
 	w.Header().Set("Content-Type", "application/json")
 
 	switch {
@@ -135,14 +173,31 @@ func (h *MockHandler) handleGetRoutes(w http.ResponseWriter, r *http.Request) {
 	count := h.configManager.GetRouteCount()
 	h.mutex.RUnlock()
 
+	// Convert routes to JSON-safe format
+	jsonSafeRoutes := make([]map[string]interface{}, len(routes))
+	for i, route := range routes {
+		jsonSafeRoutes[i] = map[string]interface{}{
+			"path":         route.Path,
+			"method":       route.Method,
+			"status_code":  route.StatusCode,
+			"content_type": route.ContentType,
+			"response":     route.GetJSONSafeResponse(),
+			"headers":      route.Headers,
+			"parameters":   route.Parameters,
+		}
+	}
+
 	response := map[string]interface{}{
-		"routes": routes,
+		"routes": jsonSafeRoutes,
 		"count":  count,
 	}
 
 	if err := json.NewEncoder(w).Encode(response); err != nil {
 		h.logger.LogErrorWithRequest(err, r, "encoding routes response")
-		http.Error(w, "Internal server error", http.StatusInternalServerError)
+		w.WriteHeader(http.StatusInternalServerError)
+		if encErr := json.NewEncoder(w).Encode(map[string]string{"error": "Failed to encode routes"}); encErr != nil {
+			h.logger.LogError(encErr, "encoding error response")
+		}
 	}
 }
 
@@ -227,7 +282,9 @@ func (h *MockHandler) handleUpdateRoute(w http.ResponseWriter, r *http.Request) 
 	if err != nil {
 		h.logger.LogErrorWithRequest(err, r, "updating route")
 		w.WriteHeader(http.StatusNotFound)
-		json.NewEncoder(w).Encode(map[string]string{"error": "Route not found"})
+		if encErr := json.NewEncoder(w).Encode(map[string]string{"error": "Route not found"}); encErr != nil {
+			h.logger.LogError(encErr, "encoding error response")
+		}
 		return
 	}
 
@@ -237,7 +294,9 @@ func (h *MockHandler) handleUpdateRoute(w http.ResponseWriter, r *http.Request) 
 		"message": "Route updated successfully",
 		"route":   updatedRoute,
 	}
-	json.NewEncoder(w).Encode(response)
+	if err := json.NewEncoder(w).Encode(response); err != nil {
+		h.logger.LogError(err, "encoding update route response")
+	}
 }
 
 // handleDeleteRoute deletes a route
@@ -245,7 +304,9 @@ func (h *MockHandler) handleDeleteRoute(w http.ResponseWriter, r *http.Request) 
 	pathParts := strings.Split(r.URL.Path, "/")
 	if len(pathParts) < 4 {
 		w.WriteHeader(http.StatusBadRequest)
-		json.NewEncoder(w).Encode(map[string]string{"error": "Invalid route path"})
+		if err := json.NewEncoder(w).Encode(map[string]string{"error": "Invalid route path"}); err != nil {
+			h.logger.LogError(err, "encoding error response")
+		}
 		return
 	}
 
@@ -258,13 +319,17 @@ func (h *MockHandler) handleDeleteRoute(w http.ResponseWriter, r *http.Request) 
 	if err != nil {
 		h.logger.LogErrorWithRequest(err, r, "deleting route")
 		w.WriteHeader(http.StatusNotFound)
-		json.NewEncoder(w).Encode(map[string]string{"error": "Route not found"})
+		if encErr := json.NewEncoder(w).Encode(map[string]string{"error": "Route not found"}); encErr != nil {
+			h.logger.LogError(encErr, "encoding error response")
+		}
 		return
 	}
 
 	h.logger.LogInfo("Deleted route: %s", routePath)
 
-	json.NewEncoder(w).Encode(map[string]string{"message": "Route deleted successfully"})
+	if err := json.NewEncoder(w).Encode(map[string]string{"message": "Route deleted successfully"}); err != nil {
+		h.logger.LogError(err, "encoding delete route response")
+	}
 }
 
 // handleGetConfig returns the current configuration
@@ -288,13 +353,17 @@ func (h *MockHandler) handleSaveConfig(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		h.logger.LogErrorWithRequest(err, r, "saving configuration")
 		w.WriteHeader(http.StatusInternalServerError)
-		json.NewEncoder(w).Encode(map[string]string{"error": "Failed to save configuration"})
+		if encErr := json.NewEncoder(w).Encode(map[string]string{"error": "Failed to save configuration"}); encErr != nil {
+			h.logger.LogError(encErr, "encoding error response")
+		}
 		return
 	}
 
 	h.logger.LogInfo("Configuration saved to file: %s", h.configManager.GetConfigPath())
 
-	json.NewEncoder(w).Encode(map[string]string{"message": "Configuration saved successfully"})
+	if err := json.NewEncoder(w).Encode(map[string]string{"message": "Configuration saved successfully"}); err != nil {
+		h.logger.LogError(err, "encoding save config response")
+	}
 }
 
 // handleWebUI serves the web UI
@@ -323,7 +392,9 @@ func (h *MockHandler) handleNotFound(w http.ResponseWriter, r *http.Request) {
 		"path":   r.URL.Path,
 		"method": r.Method,
 	}
-	json.NewEncoder(w).Encode(response)
+	if err := json.NewEncoder(w).Encode(response); err != nil {
+		h.logger.LogError(err, "encoding not found response")
+	}
 }
 
 // findMatchingRoute finds the first route that matches the request
