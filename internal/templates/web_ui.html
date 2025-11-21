@@ -82,6 +82,23 @@
         .btn-secondary:hover {
             background-color: #5a6268;
         }
+        .btn-subtle {
+            background: none;
+            color: #667eea;
+            border: 1px dashed #667eea;
+            padding: 6px 12px;
+            font-size: 12px;
+            font-weight: normal;
+            text-decoration: none;
+            transition: all 0.2s;
+        }
+        .btn-subtle:hover {
+            background-color: #f8f9ff;
+            color: #5a6fd8;
+            border-color: #5a6fd8;
+            transform: none;
+            box-shadow: none;
+        }
         .route-headers {
             margin: 8px 0;
             font-size: 0.9em;
@@ -314,7 +331,7 @@
                             <button type="button" class="btn btn-danger btn-small" onclick="removeHeaderRow(this)">Remove</button>
                         </div>
                     </div>
-                    <button type="button" class="btn btn-secondary" onclick="addHeaderRow()">Add Another Header</button>
+                    <button type="button" class="btn-subtle" onclick="addHeaderRow()">+ Add Another Header</button>
                 </div>
                 
                 <button type="submit" class="btn">Add Route</button>
@@ -452,9 +469,11 @@
                 container.removeChild(container.lastChild);
             }
             // Clear the first row
-            const firstRow = container.firstChild;
-            firstRow.querySelector('.header-name').value = '';
-            firstRow.querySelector('.header-value').value = '';
+            const firstRow = container.children[0];
+            if (firstRow) {
+                firstRow.querySelector('.header-name').value = '';
+                firstRow.querySelector('.header-value').value = '';
+            }
         }
 
         async function addRoute(event) {
@@ -541,9 +560,11 @@
                 
                 // Use the first row for the first header
                 if (entries.length > 0) {
-                    const firstRow = container.firstChild;
-                    firstRow.querySelector('.header-name').value = entries[0][0];
-                    firstRow.querySelector('.header-value').value = entries[0][1];
+                    const firstRow = container.children[0];
+                    if (firstRow) {
+                        firstRow.querySelector('.header-name').value = entries[0][0];
+                        firstRow.querySelector('.header-value').value = entries[0][1];
+                    }
                 }
                 
                 // Add additional rows for remaining headers

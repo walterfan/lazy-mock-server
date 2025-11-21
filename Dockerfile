@@ -1,7 +1,7 @@
 # Multi-stage Dockerfile for Lazy Mock Server
 
 # Build stage
-FROM golang:1.21-alpine AS builder
+FROM golang:1.25-alpine AS builder
 
 # Install git and ca-certificates (needed for go mod download)
 RUN apk update && apk add --no-cache git ca-certificates tzdata && update-ca-certificates
