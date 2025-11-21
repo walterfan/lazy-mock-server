@@ -1,2 +1,2 @@
 #!/bin/bash
-./mock-server -port 8080 -config config/walter_config.yaml
+./mock-server -port 7777 -config config/mock_config.yaml

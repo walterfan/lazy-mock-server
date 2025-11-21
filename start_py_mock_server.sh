@@ -1,7 +1,7 @@
 #!/bin/bash
 #source ./venv/bin/activate
 
-web_port=1989
+web_port=7777
 web_debug=0
 
 if [ "$#" -ne 2 ]; then

@@ -3,7 +3,7 @@
 # Lazy Mock Server - Python (Poetry) Startup Script
 # Usage: ./start_py_mock_server_poetry.sh [port] [debug]
 
-web_port=1989
+web_port=7777
 web_debug=0
 
 if [ "$#" -eq 1 ]; then
