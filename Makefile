@@ -305,14 +305,55 @@ stats:
 	@echo "Total lines of code (all files): $(shell find . -type f -name '*.go' -o -name '*.yaml' -o -name '*.yml' -o -name '*.md' | xargs cat | wc -l)"
 	@echo "Binary size: $(shell ls -lh $(BINARY_NAME) 2>/dev/null | awk '{print $$5}' || echo 'Not built')"
 
+# Python Poetry targets
+.PHONY: poetry-install poetry-update poetry-shell poetry-run-py poetry-test-py poetry-lint-py poetry-format-py
+
+poetry-install:
+	@echo "Installing Python dependencies with Poetry..."
+	poetry install
+
+poetry-update:
+	@echo "Updating Python dependencies with Poetry..."
+	poetry update
+
+poetry-shell:
+	@echo "Activating Poetry shell..."
+	poetry shell
+
+poetry-run-py:
+	@echo "Running Python mock server with Poetry..."
+	poetry run python app/mock_server.py --port 5000
+
+poetry-test-py:
+	@echo "Running Python tests with Poetry..."
+	poetry run pytest
+
+poetry-lint-py:
+	@echo "Running Python linting with Poetry..."
+	poetry run flake8 app/
+	poetry run mypy app/
+
+poetry-format-py:
+	@echo "Formatting Python code with Poetry..."
+	poetry run black app/
+	poetry run isort app/
+
 # Development setup
-.PHONY: setup
+.PHONY: setup setup-py
 setup: deps lint-install watch-install security-install docs-install
-	@echo "Development environment setup complete!"
+	@echo "Go development environment setup complete!"
 	@echo "Available commands:"
-	@echo "  make build     - Build the application"
-	@echo "  make run       - Run with default config"
-	@echo "  make test      - Run tests"
-	@echo "  make lint      - Run linter"
+	@echo "  make build     - Build the Go application"
+	@echo "  make run       - Run Go server with default config"
+	@echo "  make test      - Run Go tests"
+	@echo "  make lint      - Run Go linter"
 	@echo "  make watch     - Watch files and auto-restart"
 	@echo "  make help      - Show all available commands"
+
+setup-py: poetry-install
+	@echo "Python development environment setup complete!"
+	@echo "Available commands:"
+	@echo "  make poetry-run-py    - Run Python mock server"
+	@echo "  make poetry-test-py   - Run Python tests"
+	@echo "  make poetry-lint-py   - Run Python linting"
+	@echo "  make poetry-format-py - Format Python code"

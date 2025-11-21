@@ -22,12 +22,36 @@ A flexible HTTP mock server available in both Python and Go implementations, sup
 ## 📋 Quick Start
 
 ### Python Version
+
+#### Using Poetry (Recommended)
+```bash
+# Install Poetry if not already installed
+curl -sSL https://install.python-poetry.org | python3 -
+
+# Install dependencies
+poetry install
+
+# Start server
+./start_py_mock_server_poetry.sh
+
+# Or manually with Poetry
+poetry run python app/mock_server.py --port 9000
+
+# Run tests
+poetry run pytest
+
+# Format code
+poetry run black app/
+poetry run isort app/
+```
+
+#### Using pip (Legacy)
 ```bash
 # Install dependencies
 pip install -r requirements.txt
 
 # Start server
-./startup.sh
+./start_py_mock_server.sh
 
 # Or manually
 cd app && python mock_server.py --port 9000
@@ -347,7 +371,11 @@ curl -X POST http://localhost:8080/_mock/config
 
 ### Python Version
 ```bash
-python mock_server.py --port 9000
+# Using Poetry
+poetry run python app/mock_server.py --port 9000
+
+# Using pip
+python app/mock_server.py --port 9000
 ```
 
 ### Go Version
@@ -450,7 +478,11 @@ make stats          # Show project statistics
 
 ### Python Version
 ```bash
-# Production deployment
+# Production deployment with Poetry
+poetry install --only=main
+poetry run gunicorn -w 4 -b 0.0.0.0:9000 app.mock_server:app
+
+# Production deployment with pip (legacy)
 pip install -r requirements.txt
 gunicorn -w 4 -b 0.0.0.0:9000 app.mock_server:app
 ```

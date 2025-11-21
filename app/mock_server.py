@@ -48,7 +48,8 @@ def mock_endpoint(path):
     # Default response for unmatched routes
     return jsonify({"error": "Route not found"}), 404
 
-if __name__ == '__main__':
+def main():
+    """Main entry point for the mock server."""
     # Parse command-line arguments for the port
     parser = argparse.ArgumentParser(description='Run a mock server.')
     parser.add_argument('--port', '-p', type=int, default=5000, help='Port to listen on (default: 5000)')
@@ -56,3 +57,7 @@ if __name__ == '__main__':
 
     # Start the Flask app on the specified port
     app.run(host='0.0.0.0', port=args.port, debug=True)
+
+
+if __name__ == '__main__':
+    main()

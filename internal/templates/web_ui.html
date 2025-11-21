@@ -58,6 +58,45 @@
             gap: 15px;
             margin-bottom: 15px;
         }
+        .header-row {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 10px;
+            align-items: center;
+        }
+        .header-name, .header-value {
+            flex: 1;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+        .btn-small {
+            padding: 5px 10px;
+            font-size: 12px;
+        }
+        .btn-secondary {
+            background-color: #6c757d;
+            color: white;
+        }
+        .btn-secondary:hover {
+            background-color: #5a6268;
+        }
+        .route-headers {
+            margin: 8px 0;
+            font-size: 0.9em;
+            color: #666;
+        }
+        .header-item {
+            display: inline-block;
+            background-color: #f8f9fa;
+            padding: 2px 6px;
+            margin: 2px 4px 2px 0;
+            border-radius: 3px;
+            border: 1px solid #e9ecef;
+            font-family: monospace;
+            font-size: 0.85em;
+        }
         .form-row > div {
             flex: 1;
         }
@@ -210,7 +249,7 @@
 <body>
     <div class="container">
         <div class="header">
-            <h1>🚀 Mock Server Management</h1>
+            <h1>Mock Server Management</h1>
             <p>Manage your mock API routes and responses in real-time</p>
         </div>
 
@@ -265,6 +304,19 @@
                     <label>Response Body:</label>
                     <textarea id="newResponse" placeholder='{"message": "Hello World"}' required></textarea>
                 </div>
+                
+                <div class="form-group">
+                    <label>Custom Headers:</label>
+                    <div id="headersContainer">
+                        <div class="header-row">
+                            <input type="text" placeholder="Header Name (e.g., X-Custom-Header)" class="header-name">
+                            <input type="text" placeholder="Header Value (e.g., custom-value)" class="header-value">
+                            <button type="button" class="btn btn-danger btn-small" onclick="removeHeaderRow(this)">Remove</button>
+                        </div>
+                    </div>
+                    <button type="button" class="btn btn-secondary" onclick="addHeaderRow()">Add Another Header</button>
+                </div>
+                
                 <button type="submit" class="btn">Add Route</button>
             </form>
         </div>
@@ -324,6 +376,15 @@
                     responsePreview = responsePreview.substring(0, 200) + '...';
                 }
 
+                // Format headers display
+                let headersDisplay = '';
+                if (route.headers && Object.keys(route.headers).length > 0) {
+                    const headersList = Object.entries(route.headers)
+                        .map(([key, value]) => `<span class="header-item">${key}: ${value}</span>`)
+                        .join('');
+                    headersDisplay = `<div class="route-headers">Headers: ${headersList}</div>`;
+                }
+
                 routeDiv.innerHTML = `
                     <div class="route-header">
                         <div class="route-info">
@@ -337,11 +398,63 @@
                             <button class="btn btn-danger" onclick="deleteRoute('${route.path}')">Delete</button>
                         </div>
                     </div>
+                    ${headersDisplay}
                     <div class="response-preview">${responsePreview}</div>
                 `;
                 
                 routesList.appendChild(routeDiv);
             });
+        }
+
+        function addHeaderRow() {
+            const container = document.getElementById('headersContainer');
+            const headerRow = document.createElement('div');
+            headerRow.className = 'header-row';
+            headerRow.innerHTML = `
+                <input type="text" placeholder="Header Name (e.g., X-Custom-Header)" class="header-name">
+                <input type="text" placeholder="Header Value (e.g., custom-value)" class="header-value">
+                <button type="button" class="btn btn-danger btn-small" onclick="removeHeaderRow(this)">Remove</button>
+            `;
+            container.appendChild(headerRow);
+        }
+
+        function removeHeaderRow(button) {
+            const container = document.getElementById('headersContainer');
+            if (container.children.length > 1) {
+                button.parentElement.remove();
+            } else {
+                // Clear the inputs instead of removing the last row
+                const row = button.parentElement;
+                row.querySelector('.header-name').value = '';
+                row.querySelector('.header-value').value = '';
+            }
+        }
+
+        function collectHeaders() {
+            const headers = {};
+            const headerRows = document.querySelectorAll('#headersContainer .header-row');
+            
+            headerRows.forEach(row => {
+                const name = row.querySelector('.header-name').value.trim();
+                const value = row.querySelector('.header-value').value.trim();
+                if (name && value) {
+                    headers[name] = value;
+                }
+            });
+            
+            return Object.keys(headers).length > 0 ? headers : undefined;
+        }
+
+        function clearHeaders() {
+            const container = document.getElementById('headersContainer');
+            // Remove all but the first header row
+            while (container.children.length > 1) {
+                container.removeChild(container.lastChild);
+            }
+            // Clear the first row
+            const firstRow = container.firstChild;
+            firstRow.querySelector('.header-name').value = '';
+            firstRow.querySelector('.header-value').value = '';
         }
 
         async function addRoute(event) {
@@ -352,7 +465,8 @@
                 method: document.getElementById('newMethod').value,
                 status_code: parseInt(document.getElementById('newStatusCode').value),
                 content_type: document.getElementById('newContentType').value,
-                response: document.getElementById('newResponse').value
+                response: document.getElementById('newResponse').value,
+                headers: collectHeaders()
             };
 
             // Try to parse response as JSON if content type is JSON
@@ -375,6 +489,7 @@
                 if (response.ok) {
                     showAlert('Route added successfully!');
                     document.getElementById('addRouteForm').reset();
+                    clearHeaders();
                     loadRoutes();
                 } else {
                     const error = await response.json();
@@ -418,6 +533,28 @@
             }
             document.getElementById('newResponse').value = responseValue;
             
+            // Populate headers
+            clearHeaders();
+            if (route.headers && Object.keys(route.headers).length > 0) {
+                const container = document.getElementById('headersContainer');
+                const entries = Object.entries(route.headers);
+                
+                // Use the first row for the first header
+                if (entries.length > 0) {
+                    const firstRow = container.firstChild;
+                    firstRow.querySelector('.header-name').value = entries[0][0];
+                    firstRow.querySelector('.header-value').value = entries[0][1];
+                }
+                
+                // Add additional rows for remaining headers
+                for (let i = 1; i < entries.length; i++) {
+                    addHeaderRow();
+                    const newRow = container.lastChild;
+                    newRow.querySelector('.header-name').value = entries[i][0];
+                    newRow.querySelector('.header-value').value = entries[i][1];
+                }
+            }
+            
             // Change form to update mode
             const form = document.getElementById('addRouteForm');
             const submitBtn = form.querySelector('button[type="submit"]');
@@ -433,7 +570,8 @@
                 method: document.getElementById('newMethod').value,
                 status_code: parseInt(document.getElementById('newStatusCode').value),
                 content_type: document.getElementById('newContentType').value,
-                response: document.getElementById('newResponse').value
+                response: document.getElementById('newResponse').value,
+                headers: collectHeaders()
             };
 
             // Try to parse response as JSON if content type is JSON
@@ -456,6 +594,7 @@
                 if (response.ok) {
                     showAlert('Route updated successfully!');
                     document.getElementById('addRouteForm').reset();
+                    clearHeaders();
                     const submitBtn = document.querySelector('#addRouteForm button[type="submit"]');
                     submitBtn.textContent = 'Add Route';
                     submitBtn.onclick = addRoute;

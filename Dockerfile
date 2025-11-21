@@ -4,7 +4,7 @@
 FROM golang:1.21-alpine AS builder
 
 # Install git and ca-certificates (needed for go mod download)
-RUN apk update && apk add --no-cache git ca-certificates tzdata
+RUN apk update && apk add --no-cache git ca-certificates tzdata && update-ca-certificates
 
 # Create appuser for security
 RUN adduser -D -g '' appuser
@@ -12,21 +12,23 @@ RUN adduser -D -g '' appuser
 # Set working directory
 WORKDIR /build
 
-# Copy go mod files
+# Copy go mod files and vendor directory
 COPY go.mod go.sum ./
+COPY vendor/ ./vendor/
 
-# Download dependencies
-RUN go mod download
-RUN go mod verify
+# Set environment variables
+ENV CGO_ENABLED=0
 
 # Copy source code
 COPY main.go ./
+COPY internal/ ./internal/
 
-# Build the binary with optimizations
-RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build \
+# Build the binary with optimizations using vendor directory
+RUN GOOS=linux GOARCH=amd64 go build \
+    -mod=vendor \
     -ldflags='-w -s -extldflags "-static"' \
     -a -installsuffix cgo \
-    -o mock-server main.go
+    -o mock-server .
 
 # Final stage - minimal image
 FROM scratch
