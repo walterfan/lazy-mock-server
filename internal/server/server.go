@@ -23,6 +23,9 @@ type Server struct {
 	logger        *logger.Logger
 	port          int
 	configPath    string
+	enableTLS     bool
+	certFile      string
+	keyFile       string
 }
 
 // Config represents server configuration
@@ -30,6 +33,9 @@ type Config struct {
 	Port       int
 	ConfigPath string
 	LogLevel   logger.LogLevel
+	EnableTLS  bool
+	CertFile   string
+	KeyFile    string
 }
 
 // New creates a new mock server instance
@@ -78,6 +84,9 @@ func New(cfg Config) (*Server, error) {
 		logger:        log,
 		port:          cfg.Port,
 		configPath:    configPath,
+		enableTLS:     cfg.EnableTLS,
+		certFile:      cfg.CertFile,
+		keyFile:       cfg.KeyFile,
 	}
 
 	return server, nil
@@ -85,14 +94,33 @@ func New(cfg Config) (*Server, error) {
 
 // Start starts the mock server
 func (s *Server) Start() error {
-	s.logger.LogInfo("Starting mock server on port %d", s.port)
+	protocol := "HTTP"
+	if s.enableTLS {
+		protocol = "HTTPS"
+	}
+	s.logger.LogInfo("Starting mock server on port %d (%s)", s.port, protocol)
 	s.logger.LogInfo("Using configuration file: %s", s.configPath)
-	s.logger.LogInfo("Web UI available at: http://localhost:%d/_mock/ui", s.port)
+
+	scheme := "http"
+	if s.enableTLS {
+		scheme = "https"
+		s.logger.LogInfo("TLS enabled - Certificate: %s, Key: %s", s.certFile, s.keyFile)
+	}
+	s.logger.LogInfo("Web UI available at: %s://localhost:%d/_mock/ui", scheme, s.port)
 
 	// Start server in a goroutine
 	go func() {
-		if err := s.httpServer.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-			s.logger.LogError(err, "HTTP server error")
+		var err error
+		if s.enableTLS {
+			// Start HTTPS server
+			err = s.httpServer.ListenAndServeTLS(s.certFile, s.keyFile)
+		} else {
+			// Start HTTP server
+			err = s.httpServer.ListenAndServe()
+		}
+
+		if err != nil && err != http.ErrServerClosed {
+			s.logger.LogError(err, protocol+" server error")
 		}
 	}()
 

@@ -18,6 +18,7 @@ A flexible HTTP mock server available in both Python and Go implementations, sup
 - **Parameter Matching**: Route requests based on query parameters
 - **Dynamic Placeholders**: `{method}`, `{path}`, `{query}` replacement
 - **Configuration Persistence**: Save changes back to YAML files
+- **HTTPS/TLS Support**: Serve mocks over HTTPS with custom certificates
 
 ## 📋 Quick Start
 
@@ -74,6 +75,10 @@ go build -o mock-server main.go
 
 # With custom config
 ./mock-server -config config/mock_config.yaml -port 9000
+
+# With HTTPS/TLS enabled
+./generate_cert.sh  # Generate self-signed certificate
+./mock-server -tls -cert server.crt -key server.key -port 8443
 ```
 
 ## ⚙️ Configuration
@@ -387,6 +392,132 @@ python app/mock_server.py --port 9000
 |--------|-------------|---------|
 | `-port` | Port to listen on | 8080 (Go), 5000 (Python) |
 | `-config` | Path to YAML configuration | app/mock_response.yaml |
+| `-log-level` | Log level (debug, info, warn, error) | info |
+| `-tls` | Enable HTTPS/TLS | false |
+| `-cert` | Path to TLS certificate file | server.crt |
+| `-key` | Path to TLS private key file | server.key |
+| `-version` | Show version information | - |
+
+## 🔒 HTTPS/TLS Support (Go Version)
+
+The Go version supports HTTPS/TLS for secure mock server deployments. This is useful for testing applications that require secure connections or validating SSL/TLS certificate handling.
+
+### Quick Start with HTTPS
+
+#### 1. Generate a Self-Signed Certificate (for testing)
+```bash
+# Generate certificate for localhost
+./generate_cert.sh
+
+# Or generate for a custom domain
+./generate_cert.sh example.com
+```
+
+This creates two files:
+- `server.crt` - TLS certificate
+- `server.key` - Private key
+
+#### 2. Start the Server with HTTPS
+```bash
+# Using default certificate files
+./mock-server -tls
+
+# Using custom certificate files
+./mock-server -tls -cert /path/to/cert.crt -key /path/to/key.key
+
+# With custom port
+./mock-server -tls -port 8443 -cert server.crt -key server.key
+```
+
+#### 3. Test HTTPS Endpoints
+```bash
+# Accept self-signed certificate with -k flag
+curl -k https://localhost:8080/api/users
+
+# Or with explicit certificate
+curl --cacert server.crt https://localhost:8080/api/users
+```
+
+### Using Production Certificates
+
+For production or staging environments, use certificates from a Certificate Authority (CA):
+
+```bash
+# Using Let's Encrypt certificates
+./mock-server -tls \
+  -cert /etc/letsencrypt/live/yourdomain.com/fullchain.pem \
+  -key /etc/letsencrypt/live/yourdomain.com/privkey.pem \
+  -port 443
+```
+
+### HTTPS Configuration Examples
+
+#### Mixed HTTP/HTTPS Setup
+Run separate instances for HTTP and HTTPS:
+
+```bash
+# Terminal 1: HTTP server
+./mock-server -port 8080 -config config/mock_config.yaml
+
+# Terminal 2: HTTPS server
+./mock-server -tls -port 8443 -config config/mock_config.yaml
+```
+
+#### Behind a Reverse Proxy
+Use the mock server with nginx or other reverse proxies:
+
+```nginx
+server {
+    listen 443 ssl;
+    server_name api.example.com;
+    
+    ssl_certificate /path/to/server.crt;
+    ssl_certificate_key /path/to/server.key;
+    
+    location / {
+        proxy_pass http://localhost:8080;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+    }
+}
+```
+
+### Self-Signed Certificate Notes
+
+⚠️ **Important**: Self-signed certificates should only be used for testing/development:
+
+- **Browsers**: Will show security warnings that must be manually accepted
+- **cURL**: Use `-k` or `--insecure` flag to skip certificate verification
+- **Production**: Always use certificates from trusted Certificate Authorities
+
+### Troubleshooting HTTPS
+
+**Certificate not found error:**
+```bash
+# Check if certificate files exist
+ls -la server.crt server.key
+
+# Generate new certificates if missing
+./generate_cert.sh
+```
+
+**Permission denied on port 443:**
+```bash
+# Use sudo for privileged ports (< 1024)
+sudo ./mock-server -tls -port 443
+
+# Or use a non-privileged port
+./mock-server -tls -port 8443
+```
+
+**Certificate expired:**
+```bash
+# Check certificate expiration
+openssl x509 -in server.crt -noout -dates
+
+# Generate new certificate
+./generate_cert.sh
+```
 
 ## 🧪 Testing Examples
 
@@ -429,6 +560,7 @@ curl -H "Accept: text/html" http://localhost:8080/api/html
 | Custom Status Codes | ✅ | ✅ |
 | Content Types | ✅ | ✅ |
 | YAML Configuration | ✅ | ✅ |
+| HTTPS/TLS Support | ❌ | ✅ |
 | Wildcard Paths | ❌ | ✅ |
 | Parameter Matching | ❌ | ✅ |
 | Dynamic Placeholders | ❌ | ✅ |

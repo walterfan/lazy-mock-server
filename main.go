@@ -24,6 +24,9 @@ func main() {
 		configPath = flag.String("config", "app/mock_response.yaml", "Path to configuration file")
 		logLevel   = flag.String("log-level", "info", "Log level (debug, info, warn, error)")
 		version    = flag.Bool("version", false, "Show version information")
+		enableTLS  = flag.Bool("tls", false, "Enable HTTPS/TLS")
+		certFile   = flag.String("cert", "server.crt", "Path to TLS certificate file")
+		keyFile    = flag.String("key", "server.key", "Path to TLS private key file")
 	)
 	flag.Parse()
 
@@ -56,6 +59,9 @@ func main() {
 		Port:       *port,
 		ConfigPath: *configPath,
 		LogLevel:   logLevelEnum,
+		EnableTLS:  *enableTLS,
+		CertFile:   *certFile,
+		KeyFile:    *keyFile,
 	}
 
 	// Create and start the server
@@ -65,10 +71,17 @@ func main() {
 	}
 
 	// Display startup information
+	protocol := "http"
+	if *enableTLS {
+		protocol = "https"
+	}
 	fmt.Printf("🚀 Lazy Mock Server v%s\n", Version)
 	fmt.Printf("📁 Config: %s\n", srv.GetConfigPath())
-	fmt.Printf("🌐 Server: http://localhost:%d\n", srv.GetPort())
-	fmt.Printf("🎛️  Web UI: http://localhost:%d/_mock/ui\n", srv.GetPort())
+	fmt.Printf("🌐 Server: %s://localhost:%d\n", protocol, srv.GetPort())
+	fmt.Printf("🎛️  Web UI: %s://localhost:%d/_mock/ui\n", protocol, srv.GetPort())
+	if *enableTLS {
+		fmt.Printf("🔒 TLS: Enabled (cert: %s, key: %s)\n", *certFile, *keyFile)
+	}
 	fmt.Printf("📊 Routes: %d configured\n", srv.GetConfigManager().GetRouteCount())
 	fmt.Println("🔥 Server starting...")
 

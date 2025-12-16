@@ -30,6 +30,9 @@ help:
 	@echo "  tidy           Tidy up go.mod"
 	@echo "  run            Run the server with default config"
 	@echo "  run-advanced   Run the server with advanced config"
+	@echo "  run-https      Run the server with HTTPS/TLS"
+	@echo "  cert           Generate self-signed TLS certificate"
+	@echo "  test-https     Test HTTPS endpoints"
 	@echo "  install        Install the binary to GOPATH/bin"
 	@echo "  docker-build   Build Docker image"
 	@echo "  docker-run     Run Docker container"
@@ -91,6 +94,25 @@ run-advanced: build
 run-dev:
 	@echo "Starting mock server in development mode..."
 	go run main.go -config $(CONFIG_FILE) -port 8080
+
+.PHONY: run-https
+run-https: build
+	@echo "Starting mock server with HTTPS..."
+	@if [ ! -f server.crt ] || [ ! -f server.key ]; then \
+		echo "Generating self-signed certificate..."; \
+		./generate_cert.sh; \
+	fi
+	./$(BINARY_NAME) -config $(CONFIG_FILE) -tls -cert server.crt -key server.key -port 8443
+
+.PHONY: cert
+cert:
+	@echo "Generating self-signed TLS certificate..."
+	./generate_cert.sh
+
+.PHONY: test-https
+test-https:
+	@echo "Testing HTTPS endpoints..."
+	./test_https.sh
 
 .PHONY: install
 install: build
